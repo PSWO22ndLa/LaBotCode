@@ -1458,5 +1458,6 @@ client.once('ready', () => {
   console.log(`✅ 已登入 ${client.user.tag}`);
   registerCommands();
 });
-
+console.log('🔍 Token 長度:', token ? token.length : 'undefined');
+console.log('🔍 Token 開頭:', token ? token.substring(0, 20) + '...' : 'undefined');
 client.login(process.env.DISCORD_TOKEN || token);
