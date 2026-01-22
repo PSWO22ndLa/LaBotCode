@@ -1,0 +1,80 @@
+[
+    {
+        "id": "2025_10_evtchallenger1",
+        "name": "勇者之首",
+        "description": "2025 10月限定活動挑戰者 冠軍",
+        "points":100
+    },
+    {
+        "id": "2025_10_evtsupporter1",
+        "name": "支援傳奇",
+        "description": "2025 10月限定活動支援者 冠軍",
+        "points":80
+    },
+    {
+        "id": "2025_10_cntnu1",
+        "name": "持之以恆",
+        "description": "2025 10月限定活動支援者 冠軍",
+        "points":50
+    },
+    {
+        "id": "2025_10_cntnu1",
+        "name": "持之以恆",
+        "description": "2025 10月限定活動支援者 冠軍",
+        "points":50
+    },
+    {
+        "id": "2025_10_cntnu1",
+        "name": "持之以恆",
+        "description": "2025 10月限定活動參加時長 冠軍",
+        "points":50
+    },
+    {
+        "id": "2025_10_cntnu1",
+        "name": "持之以恆",
+        "description": "2025 10月限定活動支援者 冠軍",
+        "points":50
+    },
+    {
+        "id": "v3specialapd36ap",
+        "name": "激唱Apd. ALL PERFECT",
+        "description": "激唱Apd. ALL PERFECT",
+        "points":200
+    },
+    {
+        "id": "v3specialapd36fc",
+        "name": "激唱Apd. FULL COMBO",
+        "description": "激唱Apd. FULL COMBO",
+        "points":150
+    },
+    {
+        "id": "v5specialapd37ap",
+        "name": "ULTIMATE 37組合曲 ALL PERFECT",
+        "description": "ULTIMATE 37組合曲 ALL PERFECT",
+        "points":200
+    },
+    {
+        "id": "v5specialapd37fc",
+        "name": "ULTIMATE 37組合曲 FULL COMBO",
+        "description": "ULTIMATE 37組合曲 FULL COMBO",
+        "points":150
+    },
+    {
+        "id": "v5specialms35ap",
+        "name": "MASTER 35 高難組合曲 ALL PERFECT",
+        "description": "MASTER 35 高難組合曲 ALL PERFECT",
+        "points":200
+    },
+    {
+        "id": "v5specialapd35fc",
+        "name": "MASTER 35 高難組合曲 FULL COMBO",
+        "description": "MASTER 35 高難組合曲 FULL COMBO",
+        "points":150
+    },
+    {
+        "id": "2025process_committee",
+        "name": "2025年 手續委員",
+        "description": "於2025年擔任本群手續委員",
+        "points":200
+    }
+]
