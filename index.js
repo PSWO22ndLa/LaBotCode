@@ -19,7 +19,12 @@ const {
   PermissionFlagsBits
 } = require('discord.js');
 
-const { token, clientId, guildId, clientSecret, callbackURL, sessionSecret } = require('./config.json');
+const token = process.env.DISCORD_TOKEN;
+const clientId = process.env.CLIENT_ID;
+const guildId = process.env.GUILD_ID;
+const clientSecret = process.env.CLIENT_SECRET;
+const callbackURL = process.env.CALLBACK_URL;
+const sessionSecret = process.env.SESSION_SECRET;
 // ========== Express Web 伺服器 ==========
 const app = express();
 const PORT = process.env.PORT || 3000;
