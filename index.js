@@ -33,8 +33,13 @@ const PORT = process.env.PORT || 3000;
 
 // 中介軟體
 app.use(cors({
-  origin: true, // 允許所有來源（開發用）
-  credentials: true
+  origin: [
+    'https://pjsk-practicehouse-site.vercel.app',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.static('C:/Users/ao130/Desktop/pjskpracticehouse net')); // 如果你的 HTML 放在 public 資料夾
@@ -44,8 +49,12 @@ app.use(session({
   secret: sessionSecret || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 天
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none', // ✨ 改成 'none'
+    httpOnly: true // ✨ 新增這行
   }
 }));
 
@@ -142,9 +151,9 @@ app.get('/api/auth/discord', passport.authenticate('discord'));
 
 // 登入回調
 app.get('/api/auth/callback', 
-  passport.authenticate('discord', { failureRedirect: '/?login=failed' }),
+  passport.authenticate('discord', { failureRedirect: 'https://pjsk-practicehouse-site.vercel.app/?login=failed' }),
   (req, res) => {
-    res.redirect('/?login=success');
+    res.redirect('https://pjsk-practicehouse-site.vercel.app/?login=success');
   }
 );
 
