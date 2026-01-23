@@ -1,5 +1,6 @@
 // ========== 引入模組 ==========
 require('dotenv').config();
+const db = require('./db'); 
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -150,25 +151,69 @@ app.get('/api/auth/logout', (req, res) => {
 });
 
 // 獲取使用者稱號
-app.get('/api/user/:userId/titles', (req, res) => {
+// 獲取使用者稱號（改用資料庫）
+app.get('/api/user/:userId/titles', async (req, res) => {
   try {
-    const titlesData = loadTitles();
-    const userData = titlesData[req.params.userId];
+    const userData = await db.getUser(req.params.userId);
     if (!userData) {
       return res.json({ 
         specialTitles: [], 
         achievements: [], 
         pb: [],
         rank: 'プロセカ初心者',
-        messageCount: 0
+        messageCount: 0,
+        username: 'Unknown',
+        avatar: null
       });
     }
-    res.json(userData);
+    res.json({
+      specialTitles: userData.specialTitles || [],
+      achievements: userData.achievements || [],
+      pb: userData.pb || [],
+      rank: userData.rank || 'プロセカ初心者',
+      messageCount: userData.messageCount || 0,
+      username: userData.username || 'Unknown',
+      avatar: userData.avatar || null,
+      totalPoints: userData.totalPoints || 0
+    });
   } catch (error) {
+    console.error('讀取使用者資料失敗:', error);
+    res.status(500).json({ error: '讀取失敗' });
+  }
+});
+// 根路徑測試
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'La Bot API',
+    status: 'running'
+  });
+});
+
+// 取得所有使用者
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await db.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    console.error('讀取使用者列表失敗:', error);
     res.status(500).json({ error: '讀取失敗' });
   }
 });
 
+// 取得排行榜
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const users = await db.getAllUsers();
+    const sorted = users
+      .filter(u => u.messageCount > 0)
+      .sort((a, b) => b.messageCount - a.messageCount)
+      .slice(0, 100);
+    res.json(sorted);
+  } catch (error) {
+    console.error('讀取排行榜失敗:', error);
+    res.status(500).json({ error: '讀取失敗' });
+  }
+});
 // 啟動 Web 伺服器
 app.listen(PORT, () => {
   console.log(`🌐 Web 伺服器運行於 http://localhost:${PORT}`);
@@ -842,6 +887,8 @@ client.on('messageCreate', async (message) => {
   // ===== 💬 記錄發言次數 =====
   if (message.guild && message.guild.id === guildId) {
     try {
+      await db.incrementMessageCount(message.author.id);
+      console.log(`📊 ${message.author.username} 發言次數已更新`);
       const titlesData = loadTitles();
       const userId = message.author.id;
       
@@ -1455,8 +1502,40 @@ async function grantTitleToUser(userId, titleInfo) {
 }
 
 // ========== Bot 啟動 ==========
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`✅ 已登入 ${client.user.tag}`);
+  await db.initDatabase();
+  
+  // 自動遷移舊資料
+  const titlesPath = path.join(__dirname, 'titles.json');
+  if (fs.existsSync(titlesPath)) {
+    console.log('🔄 偵測到 titles.json，開始遷移...');
+    try {
+      const titlesData = JSON.parse(fs.readFileSync(titlesPath, 'utf8'));
+      const userIds = Object.keys(titlesData);
+      
+      for (const userId of userIds) {
+        const userData = titlesData[userId];
+        await db.saveUser(userId, {
+          username: userData.username || 'Unknown',
+          specialTitles: userData.specialTitles || [],
+          totalPoints: userData.totalPoints || 0,
+          achievements: userData.achievements || [],
+          pb: userData.pb || [],
+          equippedTitles: userData.equippedTitles || [null, null, null],
+          rank: userData.rank || 'プロセカ初心者',
+          messageCount: userData.messageCount || 0,
+          avatar: userData.avatar || null
+        });
+      }
+      
+      console.log(`✅ 已遷移 ${userIds.length} 位使用者資料`);
+      fs.renameSync(titlesPath, titlesPath + '.migrated');
+    } catch (error) {
+      console.error('❌ 遷移失敗:', error);
+    }
+  }
+  
   registerCommands();
 });
 console.log('🔍 Token 長度:', token ? token.length : 'undefined');
