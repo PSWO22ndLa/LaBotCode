@@ -59,8 +59,8 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const titlesData = loadTitles();
-    const userData = titlesData[id];
+    let userData = await db.getUser(id);  // ✅ 改用資料庫
+    
     if (userData) {
       // 從 Discord 獲取最新使用者資訊
       const guild = client.guilds.cache.get(guildId);
@@ -76,9 +76,23 @@ passport.deserializeUser(async (id, done) => {
           userData.rank = rankRole ? rankRole.name : 'プロセカ初心者';
         }
       }
+    } else {
+      // 如果資料庫沒有，建立預設資料
+      userData = { 
+        id, 
+        username: 'Unknown', 
+        achievements: [], 
+        pb: [], 
+        totalPoints: 0, 
+        rank: 'プロセカ初心者',
+        messageCount: 0,
+        specialTitles: []
+      };
     }
-    done(null, userData || { id, username: 'Unknown', achievements: [], pb: [], totalPoints: 0, rank: 'プロセカ初心者' });
+    
+    done(null, userData);
   } catch (error) {
+    console.error('反序列化使用者錯誤:', error);
     done(error, null);
   }
 });
@@ -92,8 +106,7 @@ passport.use(new DiscordStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      const titlesData = loadTitles();
-      let userData = titlesData[profile.id];
+      let userData = await db.getUser(profile.id);  // ✅ 改用資料庫
       
       if (!userData) {
         userData = {
@@ -105,22 +118,23 @@ passport.use(new DiscordStrategy({
           achievements: [],
           pb: [],
           equippedTitles: [null, null, null],
-          rank: 'プロセカ初心者'
+          rank: 'プロセカ初心者',
+          messageCount: 0
         };
-        titlesData[profile.id] = userData;
-        saveTitles(titlesData);
+        await db.saveUser(profile.id, userData);  // ✅ 改用資料庫
       } else {
         userData.username = profile.username;
         userData.avatar = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`;
+        await db.saveUser(profile.id, userData);  // ✅ 更新到資料庫
       }
       
       return done(null, userData);
     } catch (error) {
+      console.error('OAuth 驗證錯誤:', error);
       return done(error, null);
     }
   }
 ));
-
 // ===== API 路由 =====
 
 // 登入路由
