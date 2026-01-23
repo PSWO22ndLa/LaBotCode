@@ -1028,6 +1028,10 @@ client.on('messageCreate', async (message) => {
 // ========== Slash 指令註冊 ==========
 async function registerCommands() {
   const commands = [
+  new SlashCommandBuilder()
+    .setName('同步等級')
+    .setDescription('從 Discord 段位身分組同步使用者等級到資料庫')
+   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder().setName('myachievements').setDescription('查詢我的成就'),
     new SlashCommandBuilder().setName('achievements').setDescription('查看所有成就清單'),
     new SlashCommandBuilder()
@@ -1142,7 +1146,7 @@ client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
-
+  
   // 稱號系統指令優先處理
   try {
     if (commandName === '授予稱號') {
@@ -1160,7 +1164,64 @@ client.on('interactionCreate', async interaction => {
       return await interaction.reply({ content: '❌ 執行指令時發生錯誤', ephemeral: true });
     }
   }
-
+  // 同步等級指令
+if (commandName === '同步等級') {
+  await interaction.deferReply();
+  
+  const members = await interaction.guild.members.fetch();
+  let syncCount = 0;
+  let notFoundCount = 0;
+  
+  for (const [userId, member] of members) {
+    if (member.user.bot) continue; // 跳過機器人
+    
+    const userRoles = member.roles.cache;
+    
+    // 找到段位身分組（只從 rankRoles 中找）
+    const rankRole = userRoles.find(r => rankRoles.includes(r.name));
+    
+    if (rankRole) {
+      try {
+        let userData = await db.getUser(userId);
+        
+        // 如果使用者不存在，建立基本資料
+        if (!userData) {
+          userData = {
+            id: userId,
+            username: member.user.username,
+            specialTitles: [],
+            totalPoints: 0,
+            achievements: [],
+            pb: [],
+            equippedTitles: [null, null, null],
+            rank: rankRole.name,
+            messageCount: 0,
+            avatar: member.user.displayAvatarURL({ extension: 'png', size: 256 })
+          };
+        } else {
+          // 使用者存在，只更新 rank
+          userData.rank = rankRole.name;
+          userData.username = member.user.username; // 順便更新使用者名稱
+          userData.avatar = member.user.displayAvatarURL({ extension: 'png', size: 256 }); // 順便更新頭像
+        }
+        
+        await db.saveUser(userId, userData);
+        syncCount++;
+        console.log(`✅ 已同步 ${member.user.username} 的等級: ${rankRole.name}`);
+      } catch (error) {
+        console.error(`❌ 同步 ${member.user.username} 失敗:`, error);
+      }
+    } else {
+      notFoundCount++;
+    }
+  }
+  
+  return interaction.editReply(
+    `✅ 同步完成！\n` +
+    `📊 成功同步: ${syncCount} 人\n` +
+    `⚠️ 無段位身分組: ${notFoundCount} 人`
+  );
+}
   // 其他系統指令
   const players = loadPlayers();
   const userId = interaction.user.id;
@@ -1511,7 +1572,37 @@ client.once('ready', async () => {
       console.error('❌ 遷移失敗:', error);
     }
   }
-  
+  // 自動同步段位等級
+  console.log('🔄 開始同步段位等級...');
+  try {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) {
+      const members = await guild.members.fetch();
+      let syncCount = 0;
+      
+      for (const [userId, member] of members) {
+        if (member.user.bot) continue;
+        
+        const userRoles = member.roles.cache;
+        const rankRole = userRoles.find(r => rankRoles.includes(r.name));
+        
+        if (rankRole) {
+          let userData = await db.getUser(userId);
+          if (userData) {
+            userData.rank = rankRole.name;
+            userData.username = member.user.username;
+            userData.avatar = member.user.displayAvatarURL({ extension: 'png', size: 256 });
+            await db.saveUser(userId, userData);
+            syncCount++;
+          }
+        }
+      }
+      
+      console.log(`✅ 已自動同步 ${syncCount} 位成員的段位等級`);
+    }
+  } catch (error) {
+    console.error('❌ 自動同步段位失敗:', error);
+  }
   registerCommands();
 });
 console.log('🔍 Token 長度:', token ? token.length : 'undefined');
