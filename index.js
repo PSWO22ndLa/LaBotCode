@@ -888,26 +888,7 @@ client.on('messageCreate', async (message) => {
   if (message.guild && message.guild.id === guildId) {
     try {
       await db.incrementMessageCount(message.author.id);
-      console.log(`📊 ${message.author.username} 發言次數已更新`);
-      const titlesData = loadTitles();
-      const userId = message.author.id;
-      
-      if (!titlesData[userId]) {
-        titlesData[userId] = {
-          id: userId,
-          specialTitles: [],
-          totalPoints: 0,
-          achievements: [],
-          pb: [],
-          equippedTitles: [null, null, null],
-          messageCount: 0
-        };
-      }
-      
-      titlesData[userId].messageCount = (titlesData[userId].messageCount || 0) + 1;
-      saveTitles(titlesData);
-      
-      console.log(`📊 ${message.author.username} 發言次數: ${titlesData[userId].messageCount}`);
+      console.log(`📊 ${message.author.username} 發言次數已更新`);     
     } catch (error) {
       console.error('記錄發言失敗:', error);
     }
@@ -1405,9 +1386,7 @@ async function handleViewTitles(interaction) {
   const userId = targetUser.id;
 
   try {
-    const titlesData = loadTitles();
-    const userData = titlesData[userId];
-    
+    const userData = await db.getUser(userId);
     if (!userData || !userData.specialTitles || userData.specialTitles.length === 0) {
       return await interaction.reply({
         content: `${targetUser.tag} 目前沒有解鎖任何特殊稱號`,
@@ -1442,9 +1421,7 @@ async function handleRevokeTitle(interaction) {
   const userId = targetUser.id;
 
   try {
-    const titlesData = loadTitles();
-    const userData = titlesData[userId];
-    
+    const userData = await db.getUser(userId);    
     if (!userData) {
       return await interaction.reply({
         content: '❌ 找不到該使用者資料',
@@ -1456,8 +1433,7 @@ async function handleRevokeTitle(interaction) {
       userData.specialTitles = userData.specialTitles.filter(id => id !== titleId);
     }
 
-    titlesData[userId] = userData;
-    saveTitles(titlesData);
+    await db.saveUser(userId, userData);
 
     await interaction.reply({
       content: `✅ 已移除 ${targetUser.tag} 的稱號`,
@@ -1474,8 +1450,7 @@ async function handleRevokeTitle(interaction) {
 
 // 工具函數: 授予稱號給使用者
 async function grantTitleToUser(userId, titleInfo) {
-  const titlesData = loadTitles();
-  let userData = titlesData[userId];
+  let userData = await db.getUser(userId);
   
   if (!userData) {
     userData = {
@@ -1484,7 +1459,9 @@ async function grantTitleToUser(userId, titleInfo) {
       totalPoints: 0,
       achievements: [],
       pb: [],
-      equippedTitles: [null, null, null]
+      equippedTitles: [null, null, null],
+      rank: 'プロセカ初心者',
+      messageCount: 0
     };
   }
 
@@ -1497,8 +1474,7 @@ async function grantTitleToUser(userId, titleInfo) {
   }
 
   userData.specialTitles.push(titleInfo.id);
-  titlesData[userId] = userData;
-  saveTitles(titlesData);
+  await db.saveUser(userId, userData);
 }
 
 // ========== Bot 啟動 ==========
