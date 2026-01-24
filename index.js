@@ -52,9 +52,10 @@ app.use(session({
   proxy: true,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none', // ✨ 改成 'none'
-    httpOnly: true // ✨ 新增這行
+    secure: true, // ✅ 強制啟用 (因為你已經是 HTTPS)
+    sameSite: 'none', // ✅ 允許跨域
+    httpOnly: true, // ✅ 安全性
+    domain: undefined // ✅ 讓瀏覽器自動處理
   }
 }));
 
