@@ -8,7 +8,6 @@ const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const cors = require('cors');
-const pgSession = require('connect-pg-simple')(session);
 const {
   Client,
   GatewayIntentBits,
@@ -45,21 +44,20 @@ app.use(express.json());
 app.use(express.static('C:/Users/ao130/Desktop/pjskpracticehouse net')); // 如果你的 HTML 放在 public 資料夾
 
 // Session 設定
+// Session 設定
 app.use(session({
-  store: new pgSession({
-    conString: process.env.DATABASE_URL, // Railway PostgreSQL
-    tableName: 'session' // 自動建立資料表
-  }),
   secret: sessionSecret || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
   proxy: true,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-    secure: true,
-    sameSite: 'none',
-    httpOnly: true
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 天
+    secure: true, // ✅ 強制 HTTPS (修正手機問題的關鍵!)
+    sameSite: 'none', // ✅ 允許跨域
+    httpOnly: true, // ✅ 安全性
+    path: '/' // ✅ 確保所有路徑都能用
   }
+}));
 }));
 
 // Passport 設定
