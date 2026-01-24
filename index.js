@@ -58,7 +58,6 @@ app.use(session({
     path: '/' // ✅ 確保所有路徑都能用
   }
 }));
-}));
 
 // Passport 設定
 app.use(passport.initialize());
