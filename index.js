@@ -8,7 +8,7 @@ const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const cors = require('cors');
-
+const pgSession = require('connect-pg-simple')(session);
 const {
   Client,
   GatewayIntentBits,
@@ -46,16 +46,19 @@ app.use(express.static('C:/Users/ao130/Desktop/pjskpracticehouse net')); // 如�
 
 // Session 設定
 app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL, // Railway PostgreSQL
+    tableName: 'session' // 自動建立資料表
+  }),
   secret: sessionSecret || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
   proxy: true,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    secure: true, // ✅ 強制啟用 (因為你已經是 HTTPS)
-    sameSite: 'none', // ✅ 允許跨域
-    httpOnly: true, // ✅ 安全性
-    domain: undefined // ✅ 讓瀏覽器自動處理
+    secure: true,
+    sameSite: 'none',
+    httpOnly: true
   }
 }));
 
