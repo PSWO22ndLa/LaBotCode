@@ -46,16 +46,16 @@ app.use(express.static('C:/Users/ao130/Desktop/pjskpracticehouse net')); // 如�
 // Session 設定
 // Session 設定
 app.use(session({
-  secret: sessionSecret || 'your-secret-key-change-this',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: false,
-  proxy: true,
+  saveUninitialized: true,  // ✅ 改成 true
+  proxy: true,              // ✅ 加這行
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 天
-    secure: true, // ✅ 強制 HTTPS (修正手機問題的關鍵!)
-    sameSite: 'none', // ✅ 允許跨域
-    httpOnly: true, // ✅ 安全性
-    path: '/' // ✅ 確保所有路徑都能用
+    secure: true,
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000,  // ✅ 延長到 7 天
+    domain: '.railway.app'   // ✅ 加這行
   }
 }));
 
