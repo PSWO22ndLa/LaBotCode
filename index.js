@@ -238,6 +238,44 @@ app.get('/api/leaderboard', async (req, res) => {
     res.status(500).json({ error: '讀取失敗' });
   }
 });
+app.post('/api/user/:userId/rank', async (req, res) => {
+  const { userId } = req.params;
+  const { rank } = req.body;
+  
+  console.log(`📝 收到段位更新請求: ${userId} → ${rank}`);
+  
+  try {
+    let userData = await db.getUser(userId);
+    
+    if (!userData) {
+      // 使用者不存在,新增基本資料
+      userData = {
+        id: userId,
+        username: 'Unknown',
+        specialTitles: [],
+        totalPoints: 0,
+        achievements: [],
+        pb: [],
+        equippedTitles: [null, null, null],
+        rank: rank,
+        messageCount: 0,
+        avatar: null
+      };
+    } else {
+      // 使用者存在,更新段位
+      userData.rank = rank;
+    }
+    
+    await db.saveUser(userId, userData);
+    console.log(`✅ 段位已更新: ${rank}`);
+    
+    res.json({ success: true, rank });
+  } catch (error) {
+    console.error('❌ 段位更新失敗:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 啟動 Web 伺服器
 app.listen(PORT, () => {
   console.log(`🌐 Web 伺服器運行於 http://localhost:${PORT}`);
