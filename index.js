@@ -1227,6 +1227,7 @@ client.on('interactionCreate', async interaction => {
     }
   }
   // 同步等級指令
+// 同步等級指令
 if (commandName === '同步等級') {
   await interaction.deferReply();
   
@@ -1235,39 +1236,30 @@ if (commandName === '同步等級') {
   let notFoundCount = 0;
   
   for (const [userId, member] of members) {
-    if (member.user.bot) continue; // 跳過機器人
+    if (member.user.bot) continue;
     
     const userRoles = member.roles.cache;
-    
-    // 找到段位身分組（只從 rankRoles 中找）
     const rankRole = userRoles.find(r => rankRoles.includes(r.name));
     
     if (rankRole) {
       try {
-        let userData = await db.getUser(userId);
+        // ✅ 使用 SQL 只更新段位、名稱、頭像,不影響 messageCount
+        await db.pool.query(`
+          INSERT INTO users (id, username, rank, avatar, updated_at)
+          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+          ON CONFLICT (id)
+          DO UPDATE SET
+            username = EXCLUDED.username,
+            rank = EXCLUDED.rank,
+            avatar = EXCLUDED.avatar,
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          userId,
+          member.user.username,
+          rankRole.name,
+          member.user.displayAvatarURL({ extension: 'png', size: 256 })
+        ]);
         
-        // 如果使用者不存在，建立基本資料
-        if (!userData) {
-          userData = {
-            id: userId,
-            username: member.user.username,
-            specialTitles: [],
-            totalPoints: 0,
-            achievements: [],
-            pb: [],
-            equippedTitles: [null, null, null],
-            rank: rankRole.name,
-            messageCount: 0,
-            avatar: member.user.displayAvatarURL({ extension: 'png', size: 256 })
-          };
-        } else {
-          // 使用者存在，只更新 rank
-          userData.rank = rankRole.name;
-          userData.username = member.user.username; // 順便更新使用者名稱
-          userData.avatar = member.user.displayAvatarURL({ extension: 'png', size: 256 }); // 順便更新頭像
-        }
-        
-        await db.saveUser(userId, userData);
         syncCount++;
         console.log(`✅ 已同步 ${member.user.username} 的等級: ${rankRole.name}`);
       } catch (error) {
@@ -1281,9 +1273,11 @@ if (commandName === '同步等級') {
   return interaction.editReply(
     `✅ 同步完成！\n` +
     `📊 成功同步: ${syncCount} 人\n` +
-    `⚠️ 無段位身分組: ${notFoundCount} 人`
+    `⚠️ 無段位身分組: ${notFoundCount} 人\n` +
+    `✨ 發言次數已保留不變`
   );
 }
+
   // 其他系統指令
   const players = loadPlayers();
   const userId = interaction.user.id;
@@ -1635,36 +1629,51 @@ client.once('ready', async () => {
     }
   }
   // 自動同步段位等級
-  console.log('🔄 開始同步段位等級...');
-  try {
-    const guild = client.guilds.cache.get(guildId);
-    if (guild) {
-      const members = await guild.members.fetch();
-      let syncCount = 0;
+  // 自動同步段位等級
+console.log('🔄 開始同步段位等級...');
+try {
+  const guild = client.guilds.cache.get(guildId);
+  if (guild) {
+    const members = await guild.members.fetch();
+    let syncCount = 0;
+    
+    for (const [userId, member] of members) {
+      if (member.user.bot) continue;
       
-      for (const [userId, member] of members) {
-        if (member.user.bot) continue;
-        
-        const userRoles = member.roles.cache;
-        const rankRole = userRoles.find(r => rankRoles.includes(r.name));
-        
-        if (rankRole) {
-          let userData = await db.getUser(userId);
-          if (userData) {
-            userData.rank = rankRole.name;
-            userData.username = member.user.username;
-            userData.avatar = member.user.displayAvatarURL({ extension: 'png', size: 256 });
-            await db.saveUser(userId, userData);
-            syncCount++;
-          }
+      const userRoles = member.roles.cache;
+      const rankRole = userRoles.find(r => rankRoles.includes(r.name));
+      
+      if (rankRole) {
+        try {
+          // ✅ 使用 SQL 只更新段位、名稱、頭像,不影響 messageCount
+          await db.pool.query(`
+            INSERT INTO users (id, username, rank, avatar, updated_at)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (id)
+            DO UPDATE SET
+              username = EXCLUDED.username,
+              rank = EXCLUDED.rank,
+              avatar = EXCLUDED.avatar,
+              updated_at = CURRENT_TIMESTAMP
+          `, [
+            userId,
+            member.user.username,
+            rankRole.name,
+            member.user.displayAvatarURL({ extension: 'png', size: 256 })
+          ]);
+          
+          syncCount++;
+        } catch (error) {
+          console.error(`❌ 同步 ${member.user.username} 失敗:`, error);
         }
       }
-      
-      console.log(`✅ 已自動同步 ${syncCount} 位成員的段位等級`);
     }
-  } catch (error) {
-    console.error('❌ 自動同步段位失敗:', error);
+    
+    console.log(`✅ 已自動同步 ${syncCount} 位成員的段位等級 (不影響發言次數)`);
   }
+} catch (error) {
+  console.error('❌ 自動同步段位失敗:', error);
+}
   registerCommands();
 });
 console.log('🔍 Token 長度:', token ? token.length : 'undefined');
