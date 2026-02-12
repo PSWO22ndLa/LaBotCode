@@ -26,7 +26,32 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ 資料庫初始化完成');
+    // ✨ 建立挑戰紀錄表
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS challenge_records (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL,
+        username VARCHAR(255),
+        rank VARCHAR(50) NOT NULL,
+        challenge_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        song_name VARCHAR(255),
+        perfect INTEGER DEFAULT 0,
+        great INTEGER DEFAULT 0,
+        good INTEGER DEFAULT 0,
+        bad INTEGER DEFAULT 0,
+        miss INTEGER DEFAULT 0,
+        passed BOOLEAN NOT NULL,
+        notes TEXT,
+        uploaded_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    // ✨ 建立索引 (加快查詢速度)
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_challenge_user_rank 
+      ON challenge_records(user_id, rank)
+    `);
+    console.log('✅ 資料庫初始化完成 (包含挑戰紀錄表)');
   } catch (error) {
     console.error('❌ 資料庫初始化失敗:', error);
   } finally {
