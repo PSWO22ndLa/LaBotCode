@@ -354,7 +354,7 @@ app.get('/api/challenge-records/:userId', async (req, res) => {
   }
 });
 
-// 4. 取得全群最高段位
+// 4. 取得全群最高段位 (從挑戰紀錄)
 app.get('/api/highest-rank', async (req, res) => {
   try {
     const rankOrder = [
@@ -373,10 +373,21 @@ app.get('/api/highest-rank', async (req, res) => {
       'プロセカ初心者'
     ];
     
-    // 從資料庫取得所有使用者的段位
+    // ✅ 從挑戰紀錄表取得所有「通過」的段位
     const result = await db.pool.query(`
-      SELECT DISTINCT rank FROM users WHERE rank IS NOT NULL
+      SELECT DISTINCT rank 
+      FROM challenge_records 
+      WHERE passed = true
     `);
+    
+    // 如果沒有任何通過紀錄,返回初心者
+    if (result.rows.length === 0) {
+      return res.json({ 
+        success: true, 
+        rank: 'プロセカ初心者',
+        hasChallenges: false 
+      });
+    }
     
     let highestRank = 'プロセカ初心者';
     let highestIndex = rankOrder.length - 1;
@@ -389,7 +400,11 @@ app.get('/api/highest-rank', async (req, res) => {
       }
     });
     
-    res.json({ success: true, rank: highestRank });
+    res.json({ 
+      success: true, 
+      rank: highestRank,
+      hasChallenges: true 
+    });
   } catch (error) {
     console.error('❌ 查詢最高段位失敗:', error);
     res.status(500).json({ success: false, error: error.message });
