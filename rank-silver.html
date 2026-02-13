@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>白銀 - 段位挑戰</title>
+<link rel="stylesheet" href="main.css">
+<style>
+  /* 段位詳細頁面樣式 */
+  .rank-detail-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    padding: 100px 0 60px;
+  }
+
+  .detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+
+  .rank-title-area {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .rank-badge {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4px 15px rgba(255, 255, 255, 0.3));
+  }
+
+  .rank-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .rank-title {
+    font-size: 48px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .song-tabs {
+    display: flex;
+    gap: 10px;
+  }
+
+  .song-tab {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .song-tab img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .song-tab-placeholder {
+    font-size: 40px;
+  }
+
+  .song-tab:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .song-tab.active {
+    border-color: white;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+  }
+
+  .detail-content {
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    gap: 30px;
+  }
+
+  .rules-section {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .rules-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 25px;
+  }
+
+  .rule-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(40, 40, 40, 0.8);
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+  }
+
+  .rule-label {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 8px;
+  }
+
+  .rule-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .rule-value.limit {
+    color: #e74c3c;
+  }
+
+  .rule-value.pass {
+    color: #27ae60;
+  }
+
+  .songs-section {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .song-display {
+    display: none;
+  }
+
+  .song-display.active {
+    display: block;
+  }
+
+  .song-jacket-large {
+    width: 100%;
+    max-width: 500px;
+    height: 500px;
+    margin: 0 auto 30px;
+    background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 150px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .song-jacket-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  .song-name-large {
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+
+  .song-meta-large {
+    display: grid;
+    gap: 15px;
+    max-width: 500px;
+    margin: 0 auto 25px;
+  }
+
+  .song-meta-item-large {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 16px;
+    color: #aaa;
+    padding: 15px;
+    background: rgba(40, 40, 40, 0.8);
+    border-radius: 8px;
+  }
+
+  .song-meta-label-large {
+    font-weight: 700;
+    min-width: 80px;
+    color: white;
+  }
+
+  .song-difficulty-large {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 25px;
+  }
+
+  .difficulty-badge {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .difficulty-badge.easy { background: #2BFF00; }
+  .difficulty-badge.normal { background: #00BFFF; }
+  .difficulty-badge.hard { background: #E5FF00; color: #333; }
+  .difficulty-badge.expert { background: #FF8A80; }
+  .difficulty-badge.master { background: #B388FF; }
+  .difficulty-badge.append { 
+    background: linear-gradient(90deg, #ffb6e9 0%, #da60ff 100%);
+  }
+
+  .back-button {
+    position: fixed;
+    top: 100px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+    text-decoration: none;
+  }
+
+  .back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+
+  .back-button::before {
+    content: '←';
+    font-size: 24px;
+    color: white;
+    font-weight: 700;
+  }
+
+  @media (max-width: 1024px) {
+    .detail-content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <a href="rank-challenge.html" class="back-button"></a>
+
+  <div class="rank-detail-page">
+    <div class="detail-container">
+      <div class="detail-header">
+        <div class="rank-title-area">
+          <div class="rank-badge">
+            <img src="public/images/ranks/silver.webp" alt="白銀" onerror="this.parentElement.innerHTML='🥈'">
+          </div>
+          <h1 class="rank-title">白銀</h1>
+        </div>
+        <div class="song-tabs" id="songTabs"></div>
+      </div>
+
+      <div class="detail-content">
+        <div class="rules-section">
+          <h2 class="rules-title">段位規則</h2>
+          <div class="rule-item">
+            <div class="rule-label">曲目數量</div>
+            <div class="rule-value">3 首</div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-label">血量</div>
+            <div class="rule-value limit">100</div>
+          </div>
+          
+          <!-- 血量扣法說明 -->
+          <div style="margin-top: 30px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+              📊 血量扣法
+            </h3>
+            <div style="background: rgba(40, 40, 40, 0.8); border-radius: 8px; padding: 20px;">
+              <div style="display: grid; gap: 12px;">
+                <!-- PERFECT -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div style="min-width: 100px; font-size: 14px; font-weight: 700; background: linear-gradient(80deg, #46ffa9 0%, #b3c1ff 33%, #ff4fb8 66%, #feffb5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    PERFECT
+                  </div>
+                  <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; position: relative;">
+                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #46ffa9, #b3c1ff, #ff4fb8, #feffb5); border-radius: 3px;"></div>
+                  </div>
+                  <div style="min-width: 60px; text-align: right; font-size: 14px; font-weight: 700; color: #46ffa9;">-0</div>
+                </div>
+                
+                <!-- GREAT -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div style="min-width: 100px; font-size: 14px; font-weight: 700; color: #ff6ceb;">GREAT</div>
+                  <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; position: relative;">
+                    <div style="width: 20%; height: 100%; background: #ff6ceb; border-radius: 3px;"></div>
+                  </div>
+                  <div style="min-width: 60px; text-align: right; font-size: 14px; font-weight: 700; color: #ff6ceb;">-1</div>
+                </div>
+                
+                <!-- GOOD -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div style="min-width: 100px; font-size: 14px; font-weight: 700; color: #48cef0;">GOOD</div>
+                  <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; position: relative;">
+                    <div style="width: 50%; height: 100%; background: #48cef0; border-radius: 3px;"></div>
+                  </div>
+                  <div style="min-width: 60px; text-align: right; font-size: 14px; font-weight: 700; color: #48cef0;">-2</div>
+                </div>
+                
+                <!-- BAD -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div style="min-width: 100px; font-size: 14px; font-weight: 700; color: #4dee47;">BAD</div>
+                  <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; position: relative;">
+                    <div style="width: 80%; height: 100%; background: #4dee47; border-radius: 3px;"></div>
+                  </div>
+                  <div style="min-width: 60px; text-align: right; font-size: 14px; font-weight: 700; color: #4dee47;">-3</div>
+                </div>
+                
+                <!-- MISS -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div style="min-width: 100px; font-size: 14px; font-weight: 700; color: #999;">MISS</div>
+                  <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; position: relative;">
+                    <div style="width: 100%; height: 100%; background: #999; border-radius: 3px;"></div>
+                  </div>
+                  <div style="min-width: 60px; text-align: right; font-size: 14px; font-weight: 700; color: #999;">-3</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="songs-section" id="songsSection"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const songs = [
+      { name: 'Tell Your World', composer: 'kz-livetune', arranger: 'kz-livetune', difficulty: 'APPEND', level: 25, jacket: null },
+      { name: 'alive', composer: '市瀬るぽ', arranger: '市瀬るぽ', difficulty: 'MASTER', level: 27, jacket: null },
+      { name: '夜に駆ける', composer: 'Ayase', arranger: 'Ayase', difficulty: 'EXPERT', level: 25, jacket: null }
+    ];
+
+    // 生成小曲繪標籤
+    document.getElementById('songTabs').innerHTML = songs.map((song, i) => `
+      <div class="song-tab ${i === 0 ? 'active' : ''}" data-song="${i}">
+        ${song.jacket ? `<img src="${song.jacket}" alt="${song.name}">` : `<div class="song-tab-placeholder">🎵</div>`}
+      </div>
+    `).join('');
+
+    // 生成曲目顯示區
+    document.getElementById('songsSection').innerHTML = songs.map((song, i) => `
+      <div class="song-display ${i === 0 ? 'active' : ''}" data-song="${i}">
+        <div class="song-jacket-large">
+          ${song.jacket ? `<img src="${song.jacket}" alt="${song.name}">` : '🎵'}
+        </div>
+        <h2 class="song-name-large">${song.name}</h2>
+        <div class="song-meta-large">
+          <div class="song-meta-item-large">
+            <span class="song-meta-label-large">作曲:</span>
+            <span>${song.composer}</span>
+          </div>
+          <div class="song-meta-item-large">
+            <span class="song-meta-label-large">編曲:</span>
+            <span>${song.arranger}</span>
+          </div>
+        </div>
+        <div class="song-difficulty-large">
+          <div class="difficulty-badge ${song.difficulty.toLowerCase()}">
+            ${song.difficulty} ${song.level}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // 切換曲目
+    document.querySelectorAll('.song-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const songIndex = tab.dataset.song;
+        document.querySelectorAll('.song-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.song-display').forEach(d => d.classList.remove('active'));
+        document.querySelector(`.song-display[data-song="${songIndex}"]`).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
