@@ -275,7 +275,126 @@ app.post('/api/user/:userId/rank', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+// ========== 挑戰紀錄 API ==========
 
+// 1. 上傳挑戰成績 (管理員)
+app.post('/api/challenge-records', async (req, res) => {
+  const { 
+    userId, 
+    username, 
+    rank, 
+    songName, 
+    perfect, 
+    great, 
+    good, 
+    bad, 
+    miss, 
+    passed, 
+    notes, 
+    uploadedBy 
+  } = req.body;
+  
+  console.log(`📝 收到成績上傳: ${username} - ${rank} - ${passed ? '通過' : '不通過'}`);
+  
+  try {
+    const result = await db.pool.query(`
+      INSERT INTO challenge_records (
+        user_id, username, rank, song_name, 
+        perfect, great, good, bad, miss, 
+        passed, notes, uploaded_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [
+      userId, username, rank, songName, 
+      perfect, great, good, bad, miss, 
+      passed, notes, uploadedBy
+    ]);
+    
+    console.log(`✅ 成績已儲存: ID ${result.rows[0].id}`);
+    res.json({ success: true, record: result.rows[0] });
+  } catch (error) {
+    console.error('❌ 儲存成績失敗:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2. 查詢成員某段位的挑戰紀錄
+app.get('/api/challenge-records/:userId/:rank', async (req, res) => {
+  const { userId, rank } = req.params;
+  
+  try {
+    const result = await db.pool.query(`
+      SELECT * FROM challenge_records 
+      WHERE user_id = $1 AND rank = $2
+      ORDER BY challenge_date DESC
+    `, [userId, rank]);
+    
+    res.json({ success: true, records: result.rows });
+  } catch (error) {
+    console.error('❌ 查詢紀錄失敗:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 3. 查詢成員所有挑戰紀錄
+app.get('/api/challenge-records/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const result = await db.pool.query(`
+      SELECT * FROM challenge_records 
+      WHERE user_id = $1
+      ORDER BY challenge_date DESC
+    `, [userId]);
+    
+    res.json({ success: true, records: result.rows });
+  } catch (error) {
+    console.error('❌ 查詢紀錄失敗:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. 取得全群最高段位
+app.get('/api/highest-rank', async (req, res) => {
+  try {
+    const rankOrder = [
+      'プロセカ ∞',
+      'プロセカ 創神者',
+      'プロセカ 天啓',
+      'プロセカ 神',
+      'プロセカ 亞神',
+      'プロセカ巔峰者',
+      'プロセカ大師',
+      'プロセカ鑽石者',
+      'プロセカ白金者',
+      'プロセカ黃金者',
+      'プロセカ白銀者',
+      'プロセカ青銅者',
+      'プロセカ初心者'
+    ];
+    
+    // 從資料庫取得所有使用者的段位
+    const result = await db.pool.query(`
+      SELECT DISTINCT rank FROM users WHERE rank IS NOT NULL
+    `);
+    
+    let highestRank = 'プロセカ初心者';
+    let highestIndex = rankOrder.length - 1;
+    
+    result.rows.forEach(row => {
+      const index = rankOrder.indexOf(row.rank);
+      if (index !== -1 && index < highestIndex) {
+        highestIndex = index;
+        highestRank = row.rank;
+      }
+    });
+    
+    res.json({ success: true, rank: highestRank });
+  } catch (error) {
+    console.error('❌ 查詢最高段位失敗:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 // 啟動 Web 伺服器
 app.listen(PORT, () => {
   console.log(`🌐 Web 伺服器運行於 http://localhost:${PORT}`);
